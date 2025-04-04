@@ -1,16 +1,41 @@
 import React, { useState } from "react";
 import { LogIn, User, Lock, X, Eye, EyeOff } from "lucide-react";
+import { adminLogin } from "../api/AdminApi";
+import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const AdminForm = ({ show, handleClose }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate(); // Use useNavigate from react-router-dom
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("Admin Login Attempt");
-    console.log("Email:", email);
-    console.log("Password:", password);
+    setIsLoading(true);
+    
+    try {
+      // Use adminLogin function from AdminApi.jsx
+      const response = await adminLogin(email, password);
+      
+      console.log("Login successful:", response);
+      toast.success(response.msg || "Login successful");
+      
+      // Optional: Store token in local storage
+     
+
+      handleClose(); // Close the login modal if successful
+      navigate("/admin-dashboard"); // Redirect to admin dashboard
+
+    } catch (error) {
+      console.error("Login failed:", error);
+      
+      // Show error from backend or default message
+      toast.error(error.response?.data?.msg || "An error occurred while logging in");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -41,31 +66,35 @@ const AdminForm = ({ show, handleClose }) => {
         </div>
 
         {/* Form */}
-        <div className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-5">
           <div className="group">
-            <label className="text-sm text-gray-400 block mb-2">Email</label>
+            <label htmlFor="email" className="text-sm text-gray-400 block mb-2">Email</label>
             <div className="flex items-center bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus-within:border-indigo-500 transition-colors">
               <User className="text-gray-400" size={18} />
               <input
+                id="email"
                 type="email"
                 placeholder="admin@example.com"
                 className="bg-transparent w-full pl-3 outline-none text-white"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
           </div>
 
           <div className="group">
-            <label className="text-sm text-gray-400 block mb-2">Password</label>
+            <label htmlFor="password" className="text-sm text-gray-400 block mb-2">Password</label>
             <div className="flex items-center bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus-within:border-indigo-500 transition-colors">
               <Lock className="text-gray-400" size={18} />
               <input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 className="bg-transparent w-full pl-3 outline-none text-white"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
               <button
                 type="button"
@@ -76,16 +105,23 @@ const AdminForm = ({ show, handleClose }) => {
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Login Button */}
-        <button
-          onClick={handleLogin}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg mt-6 flex items-center justify-center transition-colors"
-        >
-          <LogIn className="mr-2" size={18} />
-          Sign In as Admin
-        </button>
+          {/* Login Button */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg mt-6 flex items-center justify-center transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <span className="animate-pulse">Processing...</span>
+            ) : (
+              <>
+                <LogIn className="mr-2" size={18} />
+                Sign In as Admin
+              </>
+            )}
+          </button>
+        </form>
 
         {/* Footer */}
         <div className="mt-6 text-center">
