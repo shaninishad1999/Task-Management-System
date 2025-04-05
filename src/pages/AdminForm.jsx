@@ -14,29 +14,26 @@ const AdminForm = ({ show, handleClose }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+  
     try {
-      // Use adminLogin function from AdminApi.jsx
       const response = await adminLogin(email, password);
-      
-      console.log("Login successful:", response);
+  
+      // ✅ Destructure admin object from response
+      const { admin } = response;
+  
+      // ✅ Save in localStorage
+      localStorage.setItem("adminName", admin.name);
+      localStorage.setItem("adminEmail", admin.email);
+  
       toast.success(response.msg || "Login successful");
-      
-      // Optional: Store token in local storage
-     
-
-      handleClose(); // Close the login modal if successful
-      navigate("/admin-dashboard"); // Redirect to admin dashboard
-
+      navigate("/admin-dashboard");
     } catch (error) {
-      console.error("Login failed:", error);
-      
-      // Show error from backend or default message
-      toast.error(error.response?.data?.msg || "An error occurred while logging in");
+      toast.error(error.message);
     } finally {
       setIsLoading(false);
     }
   };
+  
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);

@@ -8,7 +8,7 @@ export const adminLogin = async (email, password) => {
             `${baseURL}/login`,
             { email, password },
             // { withCredentials: true } // Includes cookies for authentication
-            localStorage.getItem("email")
+          
         );  
 
         return response.data; // Return the response data
