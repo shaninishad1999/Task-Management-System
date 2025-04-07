@@ -104,78 +104,87 @@ const TeamTab = () => {
   return (
     <Container className="mt-4">
       <Card>
-        <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Team Management</h5>
-          <Button variant="light" size="sm" onClick={handleShowAddModal}>
-            + Add Team Member
-          </Button>
-        </Card.Header>
+      <Card.Header className="bg-primary text-white">
+  <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+    <h5 className="mb-0">Team Management</h5>
+    <Button variant="light" size="sm" onClick={handleShowAddModal}>
+      + Add Team Member
+    </Button>
+  </div>
+</Card.Header>
+
         <Card.Body>
-          {teamMembers.map((member) => (
-            <Card key={member._id} className="mb-3">
-              <Card.Body>
-                <Row>
-                  <Col md={1} className="d-flex align-items-center justify-content-center">
-                    {member.imageUrl ? (
-                      <img
-                        src={member.imageUrl}
-                        alt={member.name}
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "50%",
-                          backgroundColor: "#6c757d",
-                          color: "white",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "1.2rem",
-                        }}
-                      >
-                        {member.name.charAt(0)}
-                      </div>
-                    )}
-                  </Col>
-                  <Col md={8}>
-                    <h5>{member.name}</h5>
-                    <p className="text-muted mb-0">{member.role}</p>
-                  </Col>
-                  <Col md={3} className="d-flex align-items-center justify-content-end">
-                    <div>
-                      <Badge bg="info" className="me-2">
-                        Assigned Tasks: {member.tasks}
-                      </Badge>
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        className="me-2"
-                        onClick={() => handleShowViewModal(member)}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => handleRemoveMember(member._id)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          ))}
-        </Card.Body>
+  {teamMembers.map((member) => (
+    <Card key={member._id} className="mb-3 shadow-sm">
+      <Card.Body>
+        <Row className="align-items-center text-center text-sm-start">
+          {/* Profile Image */}
+          <Col xs={12} sm={2} md={1} className="mb-2 mb-sm-0 d-flex justify-content-center">
+            {member.imageUrl ? (
+              <img
+                src={member.imageUrl}
+                alt={member.name}
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  borderRadius: "50%",
+                  backgroundColor: "#6c757d",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.2rem",
+                }}
+              >
+                {member.name.charAt(0)}
+              </div>
+            )}
+          </Col>
+
+          {/* Name & Role */}
+          <Col xs={12} sm={6} md={6} className="mb-2 mb-sm-0">
+            <h6 className="mb-1">{member.name}</h6>
+            <small className="text-muted">{member.role}</small>
+          </Col>
+
+          {/* Action Buttons */}
+          <Col xs={12} sm={4} md={5}>
+            <div className="d-flex flex-wrap justify-content-center justify-content-sm-end gap-2 mt-2 mt-sm-0">
+              <Badge bg="info" className="mb-1">
+                Assigned Tasks: {member.tasks}
+              </Badge>
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => handleShowViewModal(member)}
+              >
+                View
+              </Button>
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={() => handleRemoveMember(member._id)}
+              >
+                Remove
+              </Button>
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+    </Card>
+  ))}
+</Card.Body>
+
+
       </Card>
 
       <AddTeamMemberModal
