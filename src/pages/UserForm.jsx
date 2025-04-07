@@ -5,7 +5,7 @@ import { userLogin } from "../api/UserApi";
 import { toast } from "react-hot-toast";
 
 const UserForm = ({ show, handleClose }) => {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // handles email or userid
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -15,22 +15,26 @@ const UserForm = ({ show, handleClose }) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!email || !password) {
-      toast.error("Please fill in both email and password");
+    if (!identifier || !password) {
+      toast.error("Please enter your email/user ID and password.");
       setIsLoading(false);
       return;
     }
 
     try {
-      const response = await userLogin(email, password);
+      const response = await userLogin(identifier, password);
       console.log("Login successful:", response);
       toast.success(response.msg || "Login successful");
 
-      handleClose(); // Close modal
-      navigate("/user-dashboard"); // Redirect
+      localStorage.setItem("userName", response.user.name);
+      localStorage.setItem("userEmail", response.user.email);
+      localStorage.setItem("userId", response.user.userid);
+
+      handleClose();
+      navigate("/user-dashboard");
     } catch (error) {
       console.error("Login failed:", error);
-      toast.error(error.response?.data?.msg || "An error occurred while logging in");
+      toast.error(error.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
@@ -45,16 +49,14 @@ const UserForm = ({ show, handleClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-slate-900 text-white p-8 rounded-xl shadow-lg w-full max-w-md mx-auto relative">
-        {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-200 transition-colors"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-200"
           aria-label="Close"
         >
           <X size={22} />
         </button>
 
-        {/* Header */}
         <div className="text-center mb-6">
           <div className="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="text-white" size={24} />
@@ -63,21 +65,20 @@ const UserForm = ({ show, handleClose }) => {
           <p className="text-gray-400 text-sm mt-1">Secure login required</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="group">
-            <label htmlFor="email" className="text-sm text-gray-400 block mb-2">
-              Email
+            <label htmlFor="identifier" className="text-sm text-gray-400 block mb-2">
+              Email or User ID
             </label>
             <div className="flex items-center bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 focus-within:border-indigo-500 transition-colors">
               <User className="text-gray-400" size={18} />
               <input
-                id="email"
-                type="email"
-                placeholder="user@example.com"
+                id="identifier"
+                type="text"
+                placeholder="user@example.com or user123"
                 className="bg-transparent w-full pl-3 outline-none text-white"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
               />
             </div>
@@ -108,7 +109,6 @@ const UserForm = ({ show, handleClose }) => {
             </div>
           </div>
 
-          {/* Login Button */}
           <button
             type="submit"
             disabled={isLoading}
@@ -149,7 +149,6 @@ const UserForm = ({ show, handleClose }) => {
           </button>
         </form>
 
-        {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-gray-500 text-sm">
             Authorized personnel only. Activity is monitored.
