@@ -69,3 +69,24 @@ export const deleteTask = async (taskId) => {
   }
 };
 
+
+// 🔹 **GET TASK METRICS**
+
+export const getTaskMetrics = async () => {
+  try {
+    const response = await API.get("/gettaskmetrics");
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+}
+
+// 🔹 **GET RECENT TASKS**
+export const getRecentTasks = async () => {
+  try {
+    const response = await API.get("/getrecenttasks");
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+}

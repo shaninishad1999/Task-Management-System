@@ -1,57 +1,67 @@
-import React from "react";
-
-// Sample data for tasks
-const initialTasks = [
-  {
-    id: 1,
-    title: "Design login page",
-    status: "In Progress",
-    priority: "High",
-    assignee: "John Doe",
-    dueDate: "2025-04-12",
-  },
-  {
-    id: 2,
-    title: "API integration",
-    status: "Pending",
-    priority: "Medium",
-    assignee: "Jane Smith",
-    dueDate: "2025-04-15",
-  },
-  {
-    id: 3,
-    title: "Fix navigation bug",
-    status: "Completed",
-    priority: "High",
-    assignee: "Alex Johnson",
-    dueDate: "2025-04-03",
-  },
-  {
-    id: 4,
-    title: "Update documentation",
-    status: "Pending",
-    priority: "Low",
-    assignee: "Sam Wilson",
-    dueDate: "2025-04-18",
-  },
-  {
-    id: 5,
-    title: "Server optimization",
-    status: "In Progress",
-    priority: "Medium",
-    assignee: "John Doe",
-    dueDate: "2025-04-10",
-  },
-];
+import React, { useState, useEffect } from "react";
+import { getTaskMetrics, getRecentTasks } from "../api/taskapi"; // Adjust the path as needed
 
 const DashboardTab = () => {
-  // Calculate task statistics
-  const taskStats = {
-    total: initialTasks.length,
-    pending: initialTasks.filter((task) => task.status === "Pending").length,
-    inProgress: initialTasks.filter((task) => task.status === "In Progress").length,
-    completed: initialTasks.filter((task) => task.status === "Completed").length,
-  };
+  const [taskStats, setTaskStats] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0
+  });
+  const [recentTasks, setRecentTasks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch dashboard data on component mount
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        
+      // Fetch task metrics
+const metricsData = await getTaskMetrics();
+setTaskStats({
+  total: metricsData.total || 0,
+  pending: metricsData.pending || 0,
+  inProgress: metricsData.inProgress || 0,
+  completed: metricsData.completed || 0
+});
+        
+        
+        // Fetch recent tasks
+        const recentTasksData = await getRecentTasks();
+        setRecentTasks(recentTasksData || []);
+        
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <strong className="font-bold">Error: </strong>
+        <span className="block sm:inline">{error}</span>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -113,62 +123,66 @@ const DashboardTab = () => {
           <h3 className="text-lg font-medium">Recent Tasks</h3>
         </div>
         <div className="p-4 overflow-x-auto">
-          <table className="w-full">
-            <thead className="text-xs font-semibold uppercase text-gray-500">
-              <tr>
-                <th className="p-2 whitespace-nowrap text-left">
-                  Task
-                </th>
-                <th className="p-2 whitespace-nowrap text-left">
-                  Status
-                </th>
-                <th className="p-2 whitespace-nowrap text-left">
-                  Priority
-                </th>
-                <th className="p-2 whitespace-nowrap text-left">
-                  Assignee
-                </th>
-                <th className="p-2 whitespace-nowrap text-left">
-                  Due Date
-                </th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {initialTasks.slice(0, 3).map((task) => (
-                <tr key={task.id} className="border-b border-gray-100">
-                  <td className="p-2">{task.title}</td>
-                  <td className="p-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        task.status === "Completed"
-                          ? "bg-green-100 text-green-800"
-                          : task.status === "In Progress"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {task.status}
-                    </span>
-                  </td>
-                  <td className="p-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        task.priority === "High"
-                          ? "bg-red-100 text-red-800"
-                          : task.priority === "Medium"
-                          ? "bg-orange-100 text-orange-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {task.priority}
-                    </span>
-                  </td>
-                  <td className="p-2">{task.assignee}</td>
-                  <td className="p-2">{task.dueDate}</td>
+          {recentTasks.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No recent tasks found</p>
+          ) : (
+            <table className="w-full">
+              <thead className="text-xs font-semibold uppercase text-gray-500">
+                <tr>
+                  <th className="p-2 whitespace-nowrap text-left">
+                    Task
+                  </th>
+                  <th className="p-2 whitespace-nowrap text-left">
+                    Status
+                  </th>
+                  <th className="p-2 whitespace-nowrap text-left">
+                    Priority
+                  </th>
+                  <th className="p-2 whitespace-nowrap text-left">
+                    Assignee
+                  </th>
+                  <th className="p-2 whitespace-nowrap text-left">
+                    Due Date
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="text-sm">
+                {recentTasks.map((task) => (
+                  <tr key={task.id} className="border-b border-gray-100">
+                    <td className="p-2">{task.title}</td>
+                    <td className="p-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          task.status === "Completed"
+                            ? "bg-green-100 text-green-800"
+                            : task.status === "In Progress"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {task.status}
+                      </span>
+                    </td>
+                    <td className="p-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          task.priority === "High"
+                            ? "bg-red-100 text-red-800"
+                            : task.priority === "Medium"
+                            ? "bg-orange-100 text-orange-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {task.priority}
+                      </span>
+                    </td>
+                    <td className="p-2">{task.assignee?.name}</td>
+                    <td className="p-2">{task.dueDate}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
