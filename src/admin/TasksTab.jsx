@@ -17,31 +17,13 @@ const TasksTab = () => {
       ? tasks
       : tasks.filter((task) => task.status === statusFilter);
 
-  const handleStatusChange = (taskId, newStatus) => {
-    setTasks(
-      tasks.map((task) =>
-        task._id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
-  };
-
-  const handleAddTask = (taskData) => {
-    const newTask = {
-      _id: Date.now().toString(),
-      ...taskData,
-    };
-    setTasks([...tasks, newTask]);
-  };
-
   const refreshTasks = async () => {
     try {
       const data = await getAllTasks();
-      const assignedTasks = data.filter((task) => task.taskid);
+      console.log("Fetched tasks from API:", data);
+      const assignedTasks = data.filter((task) => task.assignee);
+      console.log("Filtered Assigned Tasks:", assignedTasks);
       setTasks(assignedTasks);
-      // console.log("Fetched tasks:", assignedTasks);
-      
-      
-      
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
     }
@@ -81,6 +63,17 @@ const TasksTab = () => {
     }
   };
 
+  const handleTaskUpdate = async (updatedTask) => {
+    // Update the tasks list with the updated task
+    setTasks(
+      tasks.map((task) =>
+        task._id === updatedTask._id ? updatedTask : task
+      )
+    );
+    // Refresh tasks from server to ensure data consistency
+    await refreshTasks();
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
@@ -93,17 +86,9 @@ const TasksTab = () => {
             <option value="All">All Status</option>
             <option value="Pending">Pending</option>
             <option value="In Progress">In Progress</option>
-            <option value="Completed" disabled>
-              Completed
-            </option>
+            <option value="Completed">Completed</option>
           </select>
         </div>
-        <button
-          className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 w-full sm:w-auto"
-          onClick={() => setIsModalOpen(true)}
-        >
-          + Add New Task
-        </button>
       </div>
 
       <div className="bg-white rounded-lg shadow">
@@ -114,7 +99,6 @@ const TasksTab = () => {
           <table className="w-full">
             <thead className="text-xs font-semibold uppercase text-gray-500">
               <tr>
-                {/* <th className="p-2 text-left">ID</th> */}
                 <th className="p-2 text-left">Task Title</th>
                 <th className="p-2 text-left">Status</th>
                 <th className="p-2 text-left">Priority</th>
@@ -127,27 +111,19 @@ const TasksTab = () => {
             <tbody className="text-sm">
               {filteredTasks.map((task) => (
                 <tr key={task._id} className="border-b border-gray-100">
-                  {/* <td className="p-2">{task._id}</td> */}
                   <td className="p-2">{task.title}</td>
                   <td className="p-2">
-                    <select
-                      className={`border px-2 py-1 rounded ${
+                    <span
+                      className={`px-2 py-1 rounded ${
                         task.status === "Completed"
                           ? "bg-green-100 border-green-200"
                           : task.status === "In Progress"
                           ? "bg-blue-100 border-blue-200"
                           : "bg-yellow-100 border-yellow-200"
                       }`}
-                      value={task.status}
-                      disabled
-                      onChange={(e) =>
-                        handleStatusChange(task._id, e.target.value)
-                      }
                     >
-                      <option value="Pending">Pending</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Completed">Completed</option>
-                    </select>
+                      {task.status}
+                    </span>
                   </td>
                   <td className="p-2">
                     <span
@@ -162,7 +138,21 @@ const TasksTab = () => {
                       {task.priority}
                     </span>
                   </td>
-                  <td className="p-2">{task.taskid?.name}</td>
+                  <td className="p-2">
+                    {task.assignee ? (
+                      <>
+                        <div className="font-semibold">
+                          {task.assignee.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {task.assignee.userid}
+                        </div>
+                      </>
+                    ) : (
+                      "Unassigned"
+                    )}
+                  </td>
+
                   <td className="p-2">{task.description}</td>
                   <td className="p-2">
                     {new Date(task.dueDate).toLocaleDateString()}
@@ -203,16 +193,10 @@ const TasksTab = () => {
         isOpen={showEditModal}
         task={selectedTask}
         onClose={() => setShowEditModal(false)}
-        onUpdate={(updatedTask) =>
-          setTasks(
-            tasks.map((task) =>
-              task._id === updatedTask._id ? updatedTask : task
-            )
-          )
-        }
+        onUpdate={handleTaskUpdate}
       />
 
-      {/* Delete Task Modal - Integrated */}
+      {/* Delete Task Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-sm text-center">

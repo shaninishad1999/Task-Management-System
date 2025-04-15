@@ -3,12 +3,25 @@ import { updateTask } from "../../api/taskapi";
 import toast from "react-hot-toast";
 
 const TaskEditModal = ({ isOpen, onClose, task, onUpdate }) => {
-  const [form, setForm] = useState(task || {});
+  const [form, setForm] = useState({});
   const [previousStatus, setPreviousStatus] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (task) {
-      setForm(task || {});
+      // Create a clean copy of the task for editing
+      const formData = {
+        _id: task._id,
+        title: task.title || "",
+        status: task.status || "Pending",
+        priority: task.priority || "Medium",
+        description: task.description || "",
+        dueDate: task.dueDate?.slice(0, 10) || "",
+        // Keep the assignee reference intact
+        assignee: task.assignee || null
+      };
+      
+      setForm(formData);
       setPreviousStatus(task.status || "");
     }
   }, [task]);
@@ -19,23 +32,29 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate }) => {
 
   const handleEdit = async () => {
     try {
-      const updated = await updateTask(form._id, form);
-      onUpdate(updated);
+      setIsSubmitting(true);
       
-      // Show status change notification if status was changed
+      // Create a clean data object for the API call
+      const dataToUpdate = { ...form };
+      
+      const updated = await updateTask(form._id, dataToUpdate);
+      onUpdate(updated);
+
       if (previousStatus && form.status !== previousStatus) {
         toast.success(`Task status changed from ${previousStatus} to ${form.status}`, {
-          icon: '🔄',
+          icon: "🔄",
           duration: 3000,
         });
       } else {
         toast.success("Task updated successfully!");
       }
-      
+
       onClose();
     } catch (error) {
       console.error("Error updating task:", error);
       toast.error("Failed to update task");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -54,6 +73,13 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate }) => {
             onChange={handleChange}
             placeholder="Task Title"
           />
+
+          {/* Show Assignee information (view only) */}
+          <div className="w-full p-2 border rounded bg-gray-100 text-gray-700">
+            <p className="text-sm font-semibold">Assignee:</p>
+            <p>{form.assignee?.name || "Unassigned"}</p>
+            <p className="text-xs text-gray-500">{form.assignee?.userid || "No UserID"}</p>
+          </div>
 
           <select
             className="w-full p-2 border rounded"
@@ -76,12 +102,12 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate }) => {
             <option value="Medium">Medium</option>
             <option value="High">High</option>
           </select>
-          
+
           <input
             className="w-full p-2 border rounded"
             name="dueDate"
             type="date"
-            value={form.dueDate?.slice(0, 10) || ""}
+            value={form.dueDate || ""}
             onChange={handleChange}
           />
 
@@ -97,14 +123,18 @@ const TaskEditModal = ({ isOpen, onClose, task, onUpdate }) => {
 
         <div className="mt-6 flex justify-end space-x-4">
           <button
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            className={`bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ${
+              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+            }`}
             onClick={handleEdit}
+            disabled={isSubmitting}
           >
-            Save
+            {isSubmitting ? "Saving..." : "Save"}
           </button>
           <button
             className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
             onClick={onClose}
+            disabled={isSubmitting}
           >
             Cancel
           </button>
