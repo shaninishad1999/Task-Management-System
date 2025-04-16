@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast"; // Changed from react-toastify to react-hot-toast
 import { createTask } from "../../api/taskapi";
 
 const NewTask = ({ show, handleClose, user, onTaskAssigned }) => {
