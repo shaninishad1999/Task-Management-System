@@ -10,7 +10,7 @@ const Profile = ({ userData, userLogout }) => {
         <h2 className="text-xl font-semibold">{userData.name || 'User'}</h2>
         <p className="text-gray-500">{userData.email}</p>
         <p className="text-gray-500">{userData.role}</p>
-        <p className="text-sm text-gray-400 mt-1">Last login: {userData.lastLogin}</p>
+        <p className="text-sm text-gray-400 mt-1">User  Id: {userData.userIdName}</p>
         <div className="mt-4 w-full">
           <button className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md text-sm hover:bg-gray-200 mb-2">
             Edit Profile

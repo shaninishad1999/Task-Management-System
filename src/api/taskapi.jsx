@@ -90,3 +90,8 @@ export const getRecentTasks = async () => {
     throw handleApiError(error);
   }
 }
+
+export const getRecentActivities = async () => {
+  const response = await axios.get("/api/activity/recent");
+  return response.data;
+};

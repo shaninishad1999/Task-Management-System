@@ -9,9 +9,9 @@ const Header = ({ userName }) => {
           <p className="text-sm text-gray-500">Welcome back, {userName}</p>
         </div>
         <div className="mt-2 sm:mt-0">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+          {/* <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
             + New Project
-          </button>
+          </button> */}
         </div>
       </div>
     </header>

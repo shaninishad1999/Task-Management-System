@@ -10,7 +10,7 @@ const UserDashboard = () => {
   const userId = localStorage.getItem("userMongoId"); // MongoDB _id stored as taskid in task
   const userName = localStorage.getItem("userName") || "User";
   const userEmail = localStorage.getItem("userEmail") || "alex@example.com";
-  
+  const userIdName=localStorage.getItem("userId") || "User ID";
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -155,6 +155,7 @@ const UserDashboard = () => {
   const userData = {
     name: userName,
     email: userEmail,
+    userIdName: userIdName,
     role: "User",
     lastLogin: "2 hours ago",
     metrics: {
