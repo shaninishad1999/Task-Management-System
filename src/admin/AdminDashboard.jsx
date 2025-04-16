@@ -29,6 +29,7 @@ const AdminDashboard = () => {
 
   const adminName = localStorage.getItem("adminName");
   const adminEmail = localStorage.getItem("adminEmail");
+  const adminProfile = localStorage.getItem("adminProfile");
 
   const handleLogout = () => {
     // Handle logout logic here
@@ -107,15 +108,12 @@ const AdminDashboard = () => {
             </ul>
           </nav>
           <div className="pt-6 border-t border-indigo-700">
-            <div className="flex items-center mb-4">
-              {adminName && (
-                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mr-3">
-                  {adminName.charAt(0).toUpperCase()}
-                </div>
-              )}
+            <div className="flex items-center mb-4 ">
+              
+              <img src={adminProfile} alt="" className="w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mr-3" />
 
-              <div>
-                <p className="font-medium">{adminName}</p>
+              <div className="flex flex-col items-center mt-3">
+                <span className="font-medium">{adminName}</span>
                 <p className="text-sm text-indigo-300">{adminEmail}</p>
               </div>
             </div>
@@ -219,11 +217,9 @@ const AdminDashboard = () => {
                 📧
               </button>
               <div className="md:hidden">
-                {adminName && (
-                  <div className="w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mr-3">
-                    {adminName.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                
+                <img src={adminProfile} alt="" className="w-10 h-10 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center mr-3" />
+
               </div>
             </div>
           </div>

@@ -24,7 +24,8 @@ const AdminForm = ({ show, handleClose }) => {
       // ✅ Save in localStorage
       localStorage.setItem("adminName", admin.name);
       localStorage.setItem("adminEmail", admin.email);
-  
+      localStorage.setItem("adminProfile", admin.adminProfile);
+    
       toast.success(response.msg || "Login successful");
       navigate("/admin-dashboard");
     } catch (error) {
