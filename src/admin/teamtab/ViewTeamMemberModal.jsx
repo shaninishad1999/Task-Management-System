@@ -7,6 +7,7 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -21,10 +22,41 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
         userid: member.userid || "",
         image: null,
       });
-      setImagePreview(member.imageUrl || null);
+      
+      // Check if member has an imageUrl and fetch it
+      if (member.imageUrl) {
+        fetchMemberImage(member.imageUrl);
+      } else {
+        setImagePreview(null);
+      }
       setEditMode(false);
     }
   }, [member]);
+
+  // Function to fetch image from API
+  const fetchMemberImage = async (imageUrl) => {
+    setIsImageLoading(true);
+    try {
+      // Assuming your API serves images directly
+      // If you need authentication, add headers here
+      const response = await fetch(imageUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+      
+      // Create blob from response and set as preview
+      const imageBlob = await response.blob();
+      const objectUrl = URL.createObjectURL(imageBlob);
+      setImagePreview(objectUrl);
+    } catch (error) {
+      console.error("Error fetching member image:", error);
+      toast.error("Failed to load profile image");
+      setImagePreview(null);
+    } finally {
+      setIsImageLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,7 +96,7 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
       updateMember({
         ...member,
         ...formData,
-        imageUrl: imagePreview,
+        imageUrl: res.data.imageUrl || member.imageUrl, // Use new image URL from response if available
       });
 
       setEditMode(false);
@@ -110,7 +142,11 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
         <Row>
           <Col md={4} className="text-center mb-3">
             <div className="position-relative">
-              {imagePreview ? (
+              {isImageLoading ? (
+                <div className="spinner-border text-primary" role="status" style={{ width: '150px', height: '150px' }}>
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              ) : imagePreview ? (
                 <Image
                   src={imagePreview}
                   roundedCircle

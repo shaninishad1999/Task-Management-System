@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Card, Button, Badge, Container, Row, Col } from "react-bootstrap";
 import AddTeamMemberModal from "./teamtab/AddTeamMemberModal";
 import ViewTeamMemberModal from "./teamtab/ViewTeamMemberModal";
+import ViewAssignedTasksModal from "./teamtab/ViewAssignedTasksModal";
 import NewTask from "./task/NewTask"; 
 import { userDisplay, userDelete } from "../api/AdminCreateUserAllApi";
 import { toast } from "react-toastify";
@@ -12,12 +13,20 @@ const TeamTab = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
+  const [showTasksModal, setShowTasksModal] = useState(false);
 
   const fetchTeamMembers = async () => {
     try {
       const users = await userDisplay();
+      console.log("Fetched Users:", users); // Raw user data
+  
       if (!Array.isArray(users)) return;
-
+  
+      // Log image URLs separately
+      users.forEach((user, index) => {
+        console.log(`Image ${index + 1}:`, user.image || "No Image");
+      });
+  
       const formattedUsers = users.map((user, index) => ({
         _id: user._id,
         id: index + 1,
@@ -27,15 +36,18 @@ const TeamTab = () => {
         phone: user.phone || "N/A",
         department: user.department || "N/A",
         userid: user.userid || "No ID",
-        imageUrl: user.imageUrl || "",
+        imageUrl: user.image || "",
         tasks: user.tasks || 0,
       }));
-
+  
       setTeamMembers(formattedUsers);
+      console.log("Formatted Users:", formattedUsers);
+  
     } catch (error) {
       console.error("Error fetching team members:", error);
     }
   };
+  
 
   useEffect(() => {
     fetchTeamMembers();
@@ -91,6 +103,18 @@ const TeamTab = () => {
     setShowAssignTaskModal(true);
   };
 
+  // Handler for showing the tasks modal
+  const handleShowTasksModal = (member) => {
+    setSelectedMember(member);
+    setShowTasksModal(true);
+  };
+
+  // Handler for closing the tasks modal
+  const handleCloseTasksModal = () => {
+    setShowTasksModal(false);
+    setSelectedMember(null);
+  };
+
   // Update this function to instantly increment the task count
   const handleTaskAssigned = () => {
     // Immediately update the task count for the selected member
@@ -130,6 +154,7 @@ const TeamTab = () => {
             <Card key={member._id} className="mb-3 shadow-sm">
               <Card.Body>
                 <Row className="align-items-center text-center text-sm-start">
+                  
                   <Col xs={12} sm={2} md={1} className="mb-2 mb-sm-0 d-flex justify-content-center">
                     {member.imageUrl ? (
                       <img
@@ -168,7 +193,13 @@ const TeamTab = () => {
 
                   <Col xs={12} sm={4} md={5}>
                     <div className="d-flex flex-wrap justify-content-center justify-content-sm-end gap-2 mt-2 mt-sm-0">
-                      <Badge bg="info">Assigned Tasks: {member.tasks}</Badge>
+                      <Badge 
+                        bg="info" 
+                        style={{ cursor: "pointer" }}
+                        onClick={() => handleShowTasksModal(member)}
+                      >
+                        Assigned Tasks: {member.tasks}
+                      </Badge>
                       <Button variant="outline-primary" size="sm" onClick={() => handleShowViewModal(member)}>View</Button>
                       <Button variant="outline-success" size="sm" onClick={() => handleAssignTaskClick(member)}>Assign Task</Button>
                       <Button variant="outline-danger" size="sm" onClick={() => handleRemoveMember(member._id)}>Remove</Button>
@@ -202,6 +233,14 @@ const TeamTab = () => {
           handleClose={handleCloseAssignTaskModal}
           user={selectedMember}
           onTaskAssigned={handleTaskAssigned}
+        />
+      )}
+
+      {selectedMember && (
+        <ViewAssignedTasksModal
+          show={showTasksModal}
+          handleClose={handleCloseTasksModal}
+          user={selectedMember}
         />
       )}
     </Container>

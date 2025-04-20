@@ -95,3 +95,20 @@ export const getRecentActivities = async () => {
   const response = await axios.get("/api/activity/recent");
   return response.data;
 };
+
+// Get all tasks for a specific user
+export const getUserTasks = async (id) => {
+  try {
+    console.log("Fetching tasks for userId:", id); // Log userId
+
+    const response = await axios.get(`${TASK_API_URL}/getusertasks/${id}`)
+
+    
+    console.log("Fetched user tasks:", response.data); // Log response data
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user tasks:", error);
+    throw error;
+  }
+};

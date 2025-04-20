@@ -1,17 +1,21 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Modal, Button, Form, Image, Row, Col } from "react-bootstrap";
+import { Modal, Button, Form, Image, Row, Col, Spinner } from "react-bootstrap";
 import toast from "react-hot-toast";
 import { createUser } from "../../api/AdminCreateUserAllApi";
 
 const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMembers = [] }) => {
   const [formData, setFormData] = useState({});
   const [preview, setPreview] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const savedImage = localStorage.getItem("teamMemberImage");
-    if (savedImage) setPreview(savedImage);
-  }, []);
+    // Reset form when modal opens
+    if (show) {
+      const savedImage = localStorage.getItem("teamMemberImage");
+      if (savedImage) setPreview(savedImage);
+    }
+  }, [show]);
 
   useEffect(() => {
     if (formData.email === "auto@create.com") {
@@ -30,8 +34,9 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
       setFormData((prev) => ({ ...prev, image: file }));
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result);
-        localStorage.setItem("teamMemberImage", reader.result);
+        const imageData = reader.result;
+        setPreview(imageData);
+        localStorage.setItem("teamMemberImage", imageData);
       };
       reader.readAsDataURL(file);
     }
@@ -44,7 +49,6 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
     if (fileInputRef.current) fileInputRef.current.value = null;
   };
 
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -77,27 +81,43 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
       }
     });
 
+    // Set creating state to true
+    setIsCreating(true);
+    
     try {
       const res = await createUser(submissionData);
       toast.success("✅ User created successfully");
+      
+      // Store image URL permanently if available
+      let imageUrl = preview;
+      if (res.data && res.data.imageUrl) {
+        // If server returns an image URL, use that
+        imageUrl = res.data.imageUrl;
+        // Save the server image URL with a unique key based on user ID
+        if (res.data.id || res.data._id) {
+          const userId = res.data.id || res.data._id;
+          localStorage.setItem(`userImage_${userId}`, imageUrl);
+        }
+      }
 
       const newTeamMember = {
-        id: Date.now(),
+        id: res.data?.id || res.data?._id || Date.now(),
         name: formData.name,
         role: formData.role,
         email: formData.email,
         phone: formData.phone || "",
         department: formData.department,
         userid: formData.userid,
-        imageUrl: preview,
+        imageUrl: imageUrl,
       };
 
       handleAddTeamMember?.(newTeamMember);
 
+      // Clear form
       setFormData({});
       setPreview(null);
       if (fileInputRef.current) fileInputRef.current.value = null;
-      localStorage.removeItem("teamMemberImage");
+      // Don't remove from localStorage yet - it will be used to display the image until server data is loaded
       handleClose();
 
     } catch (err) {
@@ -109,6 +129,9 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
       } else {
         toast.error(message || "❌ Something went wrong");
       }
+    } finally {
+      // Reset creating state
+      setIsCreating(false);
     }
   };
 
@@ -120,6 +143,14 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
 
       <Form onSubmit={handleSubmit} encType="multipart/form-data">
         <Modal.Body>
+          {/* Loading State Message */}
+          {isCreating && (
+            <div className="alert alert-info d-flex align-items-center" role="alert">
+              <Spinner animation="border" size="sm" className="me-2" />
+              <div>Creating user, please wait...</div>
+            </div>
+          )}
+          
           {/* Image Upload */}
           <div className="text-center mb-4">
             <div className="d-flex justify-content-center align-items-center gap-3">
@@ -185,6 +216,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
                   onChange={handleChange}
                   placeholder="Enter full name"
                   required
+                  disabled={isCreating}
                 />
               </Form.Group>
 
@@ -197,6 +229,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
                   onChange={handleChange}
                   placeholder="Enter email"
                   required
+                  disabled={isCreating}
                 />
               </Form.Group>
 
@@ -208,6 +241,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
                   value={formData.phone || ""}
                   onChange={handleChange}
                   placeholder="Enter phone number"
+                  disabled={isCreating}
                 />
               </Form.Group>
             </Col>
@@ -222,6 +256,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
                   onChange={handleChange}
                   placeholder="Enter user ID"
                   required
+                  disabled={isCreating}
                 />
               </Form.Group>
 
@@ -232,6 +267,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
                   value={formData.role || ""}
                   onChange={handleChange}
                   required
+                  disabled={isCreating}
                 >
                   <option value="">Select Role</option>
                   <option value="Frontend Developer">Frontend Developer</option>
@@ -250,6 +286,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
                   value={formData.department || ""}
                   onChange={handleChange}
                   required
+                  disabled={isCreating}
                 >
                   <option value="">Select Department</option>
                   <option value="Development">Development</option>
@@ -265,11 +302,25 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" onClick={handleClose} disabled={isCreating}>
             Cancel
           </Button>
-          <Button variant="primary" type="submit">
-            Add Member
+          <Button variant="primary" type="submit" disabled={isCreating}>
+            {isCreating ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                  className="me-2"
+                />
+                Creating...
+              </>
+            ) : (
+              "Add Member"
+            )}
           </Button>
         </Modal.Footer>
       </Form>

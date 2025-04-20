@@ -35,7 +35,12 @@ const DashboardTab = () => {
           completed: metricsData.completed || 0,
         });
   
-        setRecentTasks(Array.isArray(recentTasksData) ? recentTasksData : []);
+        // Limit recent tasks to only the latest 4
+        const latestTasks = Array.isArray(recentTasksData) 
+          ? recentTasksData.slice(0, 4) 
+          : [];
+        
+        setRecentTasks(latestTasks);
         setActivities(Array.isArray(recentActivitiesData) ? recentActivitiesData : []);
         setError(null);
       } catch (err) {
@@ -94,7 +99,7 @@ const DashboardTab = () => {
         ))}
       </div>
 
-      {/* Recent Tasks */}
+      {/* Recent Tasks - Limited to 4 */}
       <div className="bg-white rounded-lg shadow mb-6 md:mb-8">
         <div className="p-4 border-b border-gray-200">
           <h3 className="text-lg font-medium">Recent Tasks</h3>
@@ -146,7 +151,9 @@ const DashboardTab = () => {
                       </span>
                     </td>
                     <td className="p-2">{task.assignee?.name || "N/A"}</td>
-                    <td className="p-2">{task.dueDate}</td>
+                    <td className="p-2">
+                    {new Date(task.dueDate).toLocaleDateString()}
+                  </td>
                   </tr>
                 ))}
               </tbody>

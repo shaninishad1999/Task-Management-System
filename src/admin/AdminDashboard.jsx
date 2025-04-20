@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useRef, useEffect } from "react";
 import DashboardTab from "./DashboardTab";
 import TasksTab from "./TasksTab";
@@ -12,7 +9,9 @@ import SettingsTab from "./SettingsTab";
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const menuRef = useRef(null);
+  const logoutConfirmRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -20,22 +19,33 @@ const AdminDashboard = () => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOpen(false);
       }
+      if (logoutConfirmRef.current && !logoutConfirmRef.current.contains(event.target)) {
+        setShowLogoutConfirm(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [menuRef]);
+  }, [menuRef, logoutConfirmRef]);
 
   const adminName = localStorage.getItem("adminName");
   const adminEmail = localStorage.getItem("adminEmail");
   const adminProfile = localStorage.getItem("adminProfile");
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
     // Handle logout logic here
-    console.log("Logout clicked");
+    console.log("Logout confirmed");
     localStorage.clear();
     window.location.href = "/";
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   // Toggle menu
@@ -118,7 +128,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               className="flex items-center text-sm text-indigo-300 hover:text-white transition-colors"
             >
               <span className="mr-2">🚪</span> Logout
@@ -145,9 +155,9 @@ const AdminDashboard = () => {
                 {menuOpen && (
                   <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
                     <div className="py-1 bg-indigo-800 text-white">
-                      <h3 className="px-4 py-2 font-semibold">
+                      <h2 className="px-4 py-2 font-semibold">
                         TaskMaster {adminName}
-                      </h3>
+                      </h2>
                     </div>
                     <div className="py-1">
                       <button
@@ -193,7 +203,7 @@ const AdminDashboard = () => {
                     </div>
                     <div className="py-1 border-t border-gray-200">
                       <button
-                        onClick={handleLogout}
+                        onClick={handleLogoutClick}
                         className="flex items-center px-4 py-2 w-full text-left text-gray-700 hover:bg-gray-100"
                       >
                         <span className="mr-2">🚪</span> Logout
@@ -202,7 +212,7 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
-              <h2 className="text-xl font-semibold text-gray-800 ml-2">
+              <h2 className="lg:text-xl text-sm md:text-xl font-semibold text-gray-800 ml-2">
                 {activeTab === "dashboard" && "Dashboard Overview"}
                 {activeTab === "tasks" && "Task Management"}
                 {activeTab === "team" && "Team Members"}
@@ -233,14 +243,31 @@ const AdminDashboard = () => {
           {activeTab === "settings" && <SettingsTab adminEmail={adminEmail} />}
         </main>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div ref={logoutConfirmRef} className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Do you want to logout?</h3>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelLogout}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-white transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default AdminDashboard;
-
-
-
-
-
-
