@@ -117,6 +117,12 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
       case "Manager": return "success";
       case "Marketer": return "warning";
       case "Support": return "secondary";
+      case "Frontend Developer": return "primary";
+      case "Backend Developer": return "info";
+      case "UI/UX Designer": return "info";
+      case "Project Manager": return "success";
+      case "HR": return "warning";
+      case "QA Engineer": return "secondary";
       default: return "dark";
     }
   };
@@ -132,6 +138,44 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
       case "Support": return "secondary";
       default: return "dark";
     }
+  };
+
+  // Function to check if we have Frontend Developer, Backend Developer roles
+  const isExtendedRoleList = () => {
+    if (!member || !member.role) return false;
+    
+    return ["Frontend Developer", "Backend Developer", "UI/UX Designer", 
+           "Project Manager", "HR", "QA Engineer"].includes(member.role);
+  };
+
+  // Determine which role options to show
+  const getRoleOptions = () => {
+    // If the member already has one of the extended roles, show that list
+    if (isExtendedRoleList()) {
+      return (
+        <>
+          <option value="">Select Role</option>
+          <option value="Frontend Developer">Frontend Developer</option>
+          <option value="Backend Developer">Backend Developer</option>
+          <option value="UI/UX Designer">UI/UX Designer</option>
+          <option value="Project Manager">Project Manager</option>
+          <option value="HR">HR</option>
+          <option value="QA Engineer">QA Engineer</option>
+        </>
+      );
+    }
+    
+    // Otherwise show the original list
+    return (
+      <>
+        <option value="">Select Role</option>
+        <option value="Developer">Developer</option>
+        <option value="Designer">Designer</option>
+        <option value="Manager">Manager</option>
+        <option value="Marketer">Marketer</option>
+        <option value="Support">Support</option>
+      </>
+    );
   };
 
   if (!member) return null;
@@ -150,17 +194,24 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
                   <span className="visually-hidden">Loading...</span>
                 </div>
               ) : imagePreview ? (
-                <Image
-                  src={imagePreview}
-                  roundedCircle
-                  style={{ 
-                    width: 150, 
-                    height: 150, 
-                    objectFit: "cover", 
-                    border: editMode ? "2px solid #ccc" : "4px solid #007bff",
-                    boxShadow: editMode ? "none" : "0 4px 8px rgba(0,0,0,0.1)"
-                  }}
-                />
+                <div style={{
+                  width: 150,
+                  height: 150,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  border: editMode ? "2px solid #ccc" : "4px solid #007bff",
+                  boxShadow: editMode ? "none" : "0 4px 8px rgba(0,0,0,0.1)",
+                  margin: "0 auto"
+                }}>
+                  <Image
+                    src={imagePreview}
+                    style={{ 
+                      width: "100%", 
+                      height: "100%", 
+                      objectFit: "cover"
+                    }}
+                  />
+                </div>
               ) : (
                 <div
                   style={{
@@ -256,16 +307,11 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
                       <Form.Label>Role</Form.Label>
                       <Form.Select
                         name="role"
-                        value={formData.role || ""}
+                        value={formData.role}
                         onChange={handleChange}
                         required
                       >
-                        <option value="">Select Role</option>
-                        <option value="Developer">Developer</option>
-                        <option value="Designer">Designer</option>
-                        <option value="Manager">Manager</option>
-                        <option value="Marketer">Marketer</option>
-                        <option value="Support">Support</option>
+                        {getRoleOptions()}
                       </Form.Select>
                     </Form.Group>
                   </Col>
@@ -274,7 +320,7 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
                       <Form.Label>Department</Form.Label>
                       <Form.Select
                         name="department"
-                        value={formData.department || ""}
+                        value={formData.department}
                         onChange={handleChange}
                         required
                       >

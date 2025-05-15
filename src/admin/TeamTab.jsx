@@ -4,6 +4,7 @@ import AddTeamMemberModal from "./teamtab/AddTeamMemberModal";
 import ViewTeamMemberModal from "./teamtab/ViewTeamMemberModal";
 import ViewAssignedTasksModal from "./teamtab/ViewAssignedTasksModal";
 import NewTask from "./task/NewTask"; 
+import ConfirmDeleteModal from "./teamtab/ConfirmDeleteModal";
 import { userDisplay, userDelete } from "../api/AdminCreateUserAllApi";
 import { toast } from "react-toastify";
 
@@ -14,6 +15,9 @@ const TeamTab = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
   const [showTasksModal, setShowTasksModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState(null);
 
   const fetchTeamMembers = async () => {
     try {
@@ -27,18 +31,18 @@ const TeamTab = () => {
         console.log(`Image ${index + 1}:`, user.image || "No Image");
       });
   
-   const formattedUsers = users.map((user, index) => ({
-  _id: user._id,
-  id: index + 1,
-  name: user.name || "No Name",
-  role: user.role || "No Role",
-  email: user.email || "No Email",
-  phone: user.phone || "N/A",
-  department: user.department || "N/A",
-  userid: user.userid || "No ID",
-  imageUrl: user.image ? `http://localhost:5000/${user.image.replace(/\\/g, '/')}` : "",
-  tasks: user.tasks || 0,
-}));
+      const formattedUsers = users.map((user, index) => ({
+        _id: user._id,
+        id: index + 1,
+        name: user.name || "No Name",
+        role: user.role || "No Role",
+        email: user.email || "No Email",
+        phone: user.phone || "N/A",
+        department: user.department || "N/A",
+        userid: user.userid || "No ID",
+        imageUrl: user.image ? `http://localhost:5000/${user.image.replace(/\\/g, '/')}` : "",
+        tasks: user.tasks || 0,
+      }));
   
       setTeamMembers(formattedUsers);
       console.log("Formatted Users:", formattedUsers);
@@ -48,7 +52,6 @@ const TeamTab = () => {
     }
   };
   
-
   useEffect(() => {
     fetchTeamMembers();
   }, []);
@@ -76,17 +79,30 @@ const TeamTab = () => {
     handleCloseAddModal();
   };
 
-  const handleRemoveMember = async (_id) => {
-    const confirmDelete = window.confirm(`Are you sure you want to remove user with ID: ${_id}?`);
-    if (!confirmDelete) return;
+  const handleShowDeleteModal = (member) => {
+    setMemberToDelete(member);
+    setShowDeleteModal(true);
+  };
 
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setMemberToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!memberToDelete) return;
+    
+    setIsDeleting(true);
     try {
-      await userDelete(_id);
-      setTeamMembers(teamMembers.filter(member => member._id !== _id));
-      toast.success("🗑️ User deleted successfully");
+      await userDelete(memberToDelete._id);
+      setTeamMembers(prevMembers => prevMembers.filter(member => member._id !== memberToDelete._id));
+      toast.success("Team member removed successfully");
+      handleCloseDeleteModal();
     } catch (error) {
-      const message = error?.response?.data?.message || error.message || "❌ Failed to delete user";
+      const message = error?.response?.data?.message || error.message || "Failed to remove team member";
       toast.error(message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -150,65 +166,79 @@ const TeamTab = () => {
         </Card.Header>
 
         <Card.Body>
-          {teamMembers.map((member) => (
-            <Card key={member._id} className="mb-3 shadow-sm">
-              <Card.Body>
-                <Row className="align-items-center text-center text-sm-start">
-                  
-                  <Col xs={12} sm={2} md={1} className="mb-2 mb-sm-0 d-flex justify-content-center">
-                    {member.imageUrl ? (
-                      <img
-                        src={member.imageUrl}
-                        alt={member.name}
-                        style={{
-                          width: "50px",
-                          height: "50px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: "50px",
-                          height: "50px",
-                          borderRadius: "50%",
-                          backgroundColor: "#6c757d",
-                          color: "white",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "1.2rem",
-                        }}
-                      >
-                        {member.name.charAt(0)}
+          {teamMembers.length === 0 ? (
+            <div className="text-center py-4 text-muted">
+              <i className="bi bi-people" style={{ fontSize: "2rem" }}></i>
+              <p className="mt-2">No team members found. Add team members to get started.</p>
+            </div>
+          ) : (
+            teamMembers.map((member) => (
+              <Card key={member._id} className="mb-3 shadow-sm">
+                <Card.Body>
+                  <Row className="align-items-center text-center text-sm-start">
+                    
+                    <Col xs={12} sm={2} md={1} className="mb-2 mb-sm-0 d-flex justify-content-center">
+                      {member.imageUrl ? (
+                        <img
+                          src={member.imageUrl}
+                          alt={member.name}
+                          style={{
+                            width: "50px",
+                            height: "50px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: "50px",
+                            height: "50px",
+                            borderRadius: "50%",
+                            backgroundColor: "#6c757d",
+                            color: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "1.2rem",
+                          }}
+                        >
+                          {member.name.charAt(0)}
+                        </div>
+                      )}
+                    </Col>
+
+                    <Col xs={12} sm={6} md={6}>
+                      <h6 className="mb-1">{member.name}</h6>
+                      <small className="text-muted">{member.role}</small>
+                    </Col>
+
+                    <Col xs={12} sm={4} md={5}>
+                      <div className="d-flex flex-wrap justify-content-center justify-content-sm-end gap-2 mt-2 mt-sm-0">
+                        <Badge 
+                          bg="info" 
+                          style={{ cursor: "pointer" }}
+                          onClick={() => handleShowTasksModal(member)}
+                        >
+                          Assigned Tasks: {member.tasks}
+                        </Badge>
+                        <Button variant="outline-primary" size="sm" onClick={() => handleShowViewModal(member)}>View</Button>
+                        <Button variant="outline-success" size="sm" onClick={() => handleAssignTaskClick(member)}>Assign Task</Button>
+                        <Button 
+                          variant="outline-danger" 
+                          size="sm" 
+                          onClick={() => handleShowDeleteModal(member)}
+                          className="position-relative"
+                        >
+                          Remove
+                        </Button>
                       </div>
-                    )}
-                  </Col>
-
-                  <Col xs={12} sm={6} md={6}>
-                    <h6 className="mb-1">{member.name}</h6>
-                    <small className="text-muted">{member.role}</small>
-                  </Col>
-
-                  <Col xs={12} sm={4} md={5}>
-                    <div className="d-flex flex-wrap justify-content-center justify-content-sm-end gap-2 mt-2 mt-sm-0">
-                      <Badge 
-                        bg="info" 
-                        style={{ cursor: "pointer" }}
-                        onClick={() => handleShowTasksModal(member)}
-                      >
-                        Assigned Tasks: {member.tasks}
-                      </Badge>
-                      <Button variant="outline-primary" size="sm" onClick={() => handleShowViewModal(member)}>View</Button>
-                      <Button variant="outline-success" size="sm" onClick={() => handleAssignTaskClick(member)}>Assign Task</Button>
-                      <Button variant="outline-danger" size="sm" onClick={() => handleRemoveMember(member._id)}>Remove</Button>
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          ))}
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            ))
+          )}
         </Card.Body>
       </Card>
 
@@ -241,6 +271,16 @@ const TeamTab = () => {
           show={showTasksModal}
           handleClose={handleCloseTasksModal}
           user={selectedMember}
+        />
+      )}
+
+      {memberToDelete && (
+        <ConfirmDeleteModal
+          show={showDeleteModal}
+          handleClose={handleCloseDeleteModal}
+          handleConfirm={handleConfirmDelete}
+          memberName={memberToDelete.name}
+          isDeleting={isDeleting}
         />
       )}
     </Container>

@@ -13,8 +13,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
   useEffect(() => {
     // Reset form and errors when modal opens
     if (show) {
-      const savedImage = localStorage.getItem("teamMemberImage");
-      if (savedImage) setPreview(savedImage);
+      // Removed localStorage retrieval to prevent using saved images
       setError(null);
     }
   }, [show]);
@@ -40,7 +39,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
       reader.onloadend = () => {
         const imageData = reader.result;
         setPreview(imageData);
-        localStorage.setItem("teamMemberImage", imageData);
+        // Removed localStorage saving line
       };
       reader.readAsDataURL(file);
     }
@@ -49,7 +48,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
   const handleImageRemove = () => {
     setFormData((prev) => ({ ...prev, image: null }));
     setPreview(null);
-    localStorage.removeItem("teamMemberImage");
+    // Removed localStorage removal line
     if (fileInputRef.current) fileInputRef.current.value = null;
   };
 
@@ -123,16 +122,12 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
       
       toast.success("✅ User created successfully");
       
-      // Store image URL permanently if available
+      // Use image URL temporarily without storing in localStorage
       let imageUrl = preview;
       if (res.data && res.data.imageUrl) {
         // If server returns an image URL, use that
         imageUrl = res.data.imageUrl;
-        // Save the server image URL with a unique key based on user ID
-        if (res.data.id || res.data._id) {
-          const userId = res.data.id || res.data._id;
-          localStorage.setItem(`userImage_${userId}`, imageUrl);
-        }
+        // Removed localStorage saving
       }
 
       const newTeamMember = {
@@ -153,7 +148,7 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
       setPreview(null);
       setError(null);
       if (fileInputRef.current) fileInputRef.current.value = null;
-      // Don't remove from localStorage yet - it will be used to display the image until server data is loaded
+      // No need to handle localStorage removal as we're not saving
       handleClose();
 
     } catch (err) {
