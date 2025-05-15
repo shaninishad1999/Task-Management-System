@@ -27,18 +27,18 @@ const TeamTab = () => {
         console.log(`Image ${index + 1}:`, user.image || "No Image");
       });
   
-      const formattedUsers = users.map((user, index) => ({
-        _id: user._id,
-        id: index + 1,
-        name: user.name || "No Name",
-        role: user.role || "No Role",
-        email: user.email || "No Email",
-        phone: user.phone || "N/A",
-        department: user.department || "N/A",
-        userid: user.userid || "No ID",
-        imageUrl: user.image || "",
-        tasks: user.tasks || 0,
-      }));
+   const formattedUsers = users.map((user, index) => ({
+  _id: user._id,
+  id: index + 1,
+  name: user.name || "No Name",
+  role: user.role || "No Role",
+  email: user.email || "No Email",
+  phone: user.phone || "N/A",
+  department: user.department || "N/A",
+  userid: user.userid || "No ID",
+  imageUrl: user.image ? `http://localhost:5000/${user.image.replace(/\\/g, '/')}` : "",
+  tasks: user.tasks || 0,
+}));
   
       setTeamMembers(formattedUsers);
       console.log("Formatted Users:", formattedUsers);

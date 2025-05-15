@@ -21,42 +21,16 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
         department: member.department || "",
         userid: member.userid || "",
         image: null,
+        tasks: member.tasks || 0,
+        _id: member._id,
+        imageUrl: member.imageUrl || null
       });
       
-      // Check if member has an imageUrl and fetch it
-      if (member.imageUrl) {
-        fetchMemberImage(member.imageUrl);
-      } else {
-        setImagePreview(null);
-      }
+      // Set the image preview directly from the member's imageUrl
+      setImagePreview(member.imageUrl || null);
       setEditMode(false);
     }
   }, [member]);
-
-  // Function to fetch image from API
-  const fetchMemberImage = async (imageUrl) => {
-    setIsImageLoading(true);
-    try {
-      // Assuming your API serves images directly
-      // If you need authentication, add headers here
-      const response = await fetch(imageUrl);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status}`);
-      }
-      
-      // Create blob from response and set as preview
-      const imageBlob = await response.blob();
-      const objectUrl = URL.createObjectURL(imageBlob);
-      setImagePreview(objectUrl);
-    } catch (error) {
-      console.error("Error fetching member image:", error);
-      toast.error("Failed to load profile image");
-      setImagePreview(null);
-    } finally {
-      setIsImageLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -73,32 +47,61 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
   };
 
   const handleUpdate = async () => {
-    const submissionData = new FormData();
-    
-    // Add all form fields that match the backend expectations
-    submissionData.append("name", formData.name);
-    submissionData.append("email", formData.email);
-    submissionData.append("phone", formData.phone);
-    submissionData.append("userid", formData.userid);
-    submissionData.append("role", formData.role);
-    submissionData.append("department", formData.department);
-    
-    // Add the image if available
-    if (formData.image instanceof File) {
-      submissionData.append("image", formData.image);
-    }
-
     try {
-      const res = await userUpdate(member._id, submissionData);
-      toast.success("✅ Team member updated successfully");
+      const submissionData = new FormData();
+      
+      // Add all form fields that match the backend expectations
+      submissionData.append("name", formData.name);
+      submissionData.append("email", formData.email);
+      submissionData.append("phone", formData.phone);
+      submissionData.append("userid", formData.userid);
+      submissionData.append("role", formData.role);
+      submissionData.append("department", formData.department);
+      
+      // Add the image if available
+      if (formData.image instanceof File) {
+        submissionData.append("image", formData.image);
+      }
 
-      // Update the local state to reflect changes
-      updateMember({
+      // First update the UI immediately for a responsive experience
+      const updatedMember = {
         ...member,
-        ...formData,
-        imageUrl: res.data.imageUrl || member.imageUrl, // Use new image URL from response if available
-      });
-
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        userid: formData.userid,
+        role: formData.role,
+        department: formData.department,
+        tasks: formData.tasks,
+        _id: formData._id
+      };
+      
+      // If there's a new image preview, update it immediately in the UI
+      if (imagePreview && formData.image instanceof File) {
+        // This is temporary for immediate UI feedback
+        updatedMember.imageUrl = imagePreview;
+      } else {
+        updatedMember.imageUrl = formData.imageUrl;
+      }
+      
+      // Update the UI immediately
+      updateMember(updatedMember);
+      
+      // Then make the API call
+      const res = await userUpdate(member._id, submissionData);
+      
+      // If the server returns an updated image URL, update it in the state
+      if (res.data && res.data.image) {
+        const serverImageUrl = `http://localhost:5000/${res.data.image.replace(/\\/g, '/')}`;
+        
+        // Update the member again with the correct server URL
+        updateMember({
+          ...updatedMember,
+          imageUrl: serverImageUrl
+        });
+      }
+      
+      toast.success("✅ Team member updated successfully");
       setEditMode(false);
       handleClose();
     } catch (err) {
@@ -253,7 +256,7 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
                       <Form.Label>Role</Form.Label>
                       <Form.Select
                         name="role"
-                        value={formData.role}
+                        value={formData.role || ""}
                         onChange={handleChange}
                         required
                       >
@@ -271,7 +274,7 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
                       <Form.Label>Department</Form.Label>
                       <Form.Select
                         name="department"
-                        value={formData.department}
+                        value={formData.department || ""}
                         onChange={handleChange}
                         required
                       >
@@ -291,7 +294,7 @@ const ViewTeamMemberModal = ({ show, handleClose, member, updateMember }) => {
                   <Form.Label>Assigned Tasks</Form.Label>
                   <Form.Control
                     type="text"
-                    value={member.tasks || "None"}
+                    value={formData.tasks || "0"}
                     disabled
                   />
                 </Form.Group>

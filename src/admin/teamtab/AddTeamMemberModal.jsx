@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Modal, Button, Form, Image, Row, Col, Spinner } from "react-bootstrap";
+import { Modal, Button, Form, Image, Row, Col, Spinner, Alert } from "react-bootstrap";
 import toast from "react-hot-toast";
 import { createUser } from "../../api/AdminCreateUserAllApi";
 
@@ -7,13 +7,15 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
   const [formData, setFormData] = useState({});
   const [preview, setPreview] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    // Reset form when modal opens
+    // Reset form and errors when modal opens
     if (show) {
       const savedImage = localStorage.getItem("teamMemberImage");
       if (savedImage) setPreview(savedImage);
+      setError(null);
     }
   }, [show]);
 
@@ -26,6 +28,8 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error when user makes changes
+    setError(null);
   };
 
   const handleImageChange = (e) => {
@@ -49,26 +53,54 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
     if (fileInputRef.current) fileInputRef.current.value = null;
   };
 
+  const checkForDuplicates = () => {
+    // First check if we have existingMembers to compare against
+    if (!existingMembers || existingMembers.length === 0) {
+      return null;
+    }
+
+    // Check for duplicate email
+    const duplicateEmail = existingMembers.find(
+      member => member.email?.toLowerCase() === formData.email?.toLowerCase()
+    );
+    
+    if (duplicateEmail) {
+      console.log("Duplicate email found:", duplicateEmail);
+      return "Email already exists! Please use a different email address.";
+    }
+
+    // Check for duplicate userID
+    const duplicateUserID = existingMembers.find(
+      member => member.userid?.toLowerCase() === formData.userid?.toLowerCase()
+    );
+    
+    if (duplicateUserID) {
+      console.log("Duplicate userID found:", duplicateUserID);
+      return "User ID already exists! Please choose a different User ID.";
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
 
     const requiredFields = ["name", "email", "userid", "role", "department"];
     const isEmptyField = requiredFields.some((field) => !formData[field]?.trim());
 
     if (isEmptyField) {
-      toast.error("❌ Please fill in all required fields.");
+      const errorMessage = "Please fill in all required fields.";
+      setError(errorMessage);
+      toast.error(`❌ ${errorMessage}`);
       return;
     }
 
     // Check for duplicate email or userid
-    const isDuplicate = existingMembers.some(
-      (member) =>
-        member.email?.toLowerCase() === formData.email?.toLowerCase() ||
-        member.userid?.toLowerCase() === formData.userid?.toLowerCase()
-    );
-
-    if (isDuplicate) {
-      toast.error("❌ Email or User ID already exists!");
+    const duplicateError = checkForDuplicates();
+    if (duplicateError) {
+      setError(duplicateError);
+      toast.error(`❌ ${duplicateError}`);
       return;
     }
 
@@ -85,7 +117,10 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
     setIsCreating(true);
     
     try {
+      console.log("Submitting user data:", Object.fromEntries(submissionData.entries()));
       const res = await createUser(submissionData);
+      console.log("User creation response:", res);
+      
       toast.success("✅ User created successfully");
       
       // Store image URL permanently if available
@@ -116,19 +151,37 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
       // Clear form
       setFormData({});
       setPreview(null);
+      setError(null);
       if (fileInputRef.current) fileInputRef.current.value = null;
       // Don't remove from localStorage yet - it will be used to display the image until server data is loaded
       handleClose();
 
     } catch (err) {
-      const message = err?.response?.data?.message || err.message;
-      if (message.includes("email already exists")) {
-        toast.error("❌ Email already exists!");
-      } else if (message.includes("user ID already exists")) {
-        toast.error("❌ User ID already exists!");
+      console.error("User creation error:", err);
+      
+      // Extract error message from response
+      const errorResponse = err?.response?.data;
+      const message = errorResponse?.message || err.message || "Unknown error";
+      
+      console.log("Error message:", message);
+      
+      // Set specific error messages
+      let errorMessage = message;
+      
+      if (message.includes("email already exists") || 
+          (errorResponse?.errors && errorResponse.errors.email)) {
+        errorMessage = "Email already exists! Please use a different email address.";
+      } else if (message.includes("user ID already exists") || 
+                (errorResponse?.errors && errorResponse.errors.userid)) {
+        errorMessage = "User ID already exists! Please choose a different User ID.";
       } else {
-        toast.error(message || "❌ Something went wrong");
+        errorMessage = `Failed to create user: ${message}`;
       }
+      
+      // Set error state and show toast
+      setError(errorMessage);
+      toast.error(`❌ ${errorMessage}`);
+      
     } finally {
       // Reset creating state
       setIsCreating(false);
@@ -143,6 +196,13 @@ const AddTeamMemberModal = ({ show, handleClose, handleAddTeamMember, existingMe
 
       <Form onSubmit={handleSubmit} encType="multipart/form-data">
         <Modal.Body>
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="danger" className="mb-3">
+              {error}
+            </Alert>
+          )}
+          
           {/* Loading State Message */}
           {isCreating && (
             <div className="alert alert-info d-flex align-items-center" role="alert">
